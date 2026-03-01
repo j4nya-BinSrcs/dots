@@ -1,0 +1,259 @@
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  THE DOTS — modules/waybar/config-perf.jsonc                 ║
+// ╠══════════════════════════════════════════════════════════════╣
+// ║  Purpose : Alternate Waybar config with perf drawer OPEN.    ║
+// ║            Swapped in by toggle-perf.sh when drawer opens.   ║
+// ║  Note    : Only modules-right differs from config.jsonc.      ║
+// ╚══════════════════════════════════════════════════════════════╝
+//
+// This file is identical to config.jsonc EXCEPT the perf modules
+// (cpu, memory, disk, temperature) are present in modules-right.
+// The main config.jsonc hides them; this config shows them.
+// toggle-perf.sh swaps between the two and sends SIGUSR2 to reload.
+//
+// See config.jsonc for all module definitions and full documentation.
+// ─────────────────────────────────────────────────────────────────
+
+{
+  "layer": "top",
+  "position": "top",
+  "height": 38,
+  "margin-top": 6,
+  "margin-left": 10,
+  "margin-right": 10,
+  "spacing": 0,
+  "passthrough": false,
+  "exclusive": true,
+  "reload_style_on_change": true,
+
+  "modules-left": [
+    "custom/arch",
+    "hyprland/workspaces",
+    "hyprland/window",
+    "mpris",
+  ],
+
+  "modules-center": ["clock", "custom/notification"],
+
+  // ── Perf drawer OPEN — cpu/mem/disk/temp visible ──────────────
+  "modules-right": [
+    "tray",
+    "custom/sep",
+    "network",
+    "bluetooth",
+    "custom/sep",
+    "pulseaudio",
+    "backlight",
+    "battery",
+    "custom/sep",
+    "custom/perfbtn",
+    "cpu",
+    "memory",
+    "disk",
+    "temperature",
+    "custom/sep",
+    "custom/power",
+  ],
+
+  // ── All module definitions (same as config.jsonc) ─────────────
+  "custom/arch": {
+    "format": "",
+    "tooltip": false,
+    "on-click": "rofi -show drun -show-icons",
+    "on-click-right": "ghostty -e yazi",
+  },
+
+  "hyprland/workspaces": {
+    "format": "{icon}",
+    "format-icons": {
+      "1": "α",
+      "2": "β",
+      "3": "γ",
+      "4": "δ",
+      "5": "ε",
+      "6": "6",
+      "7": "7",
+      "8": "8",
+      "9": "9",
+      "10": "10",
+      "special": "",
+    },
+    "persistent-workspaces": { "1": [], "2": [], "3": [], "4": [], "5": [] },
+    "on-click": "activate",
+    "on-scroll-up": "hyprctl dispatch workspace e+1",
+    "on-scroll-down": "hyprctl dispatch workspace e-1",
+    "sort-by-number": true,
+    "active-only": false,
+    "tooltip": false,
+  },
+
+  "hyprland/window": {
+    "format": "{title}",
+    "max-length": 40,
+    "rewrite": {
+      "(.*) — Mozilla Firefox": "󰈹  $1",
+      "(.*) - Zen Browser": "󰈹  $1",
+      "(.*)Ghostty": "  Terminal",
+      "(.*)nvim(.*)": "  $2",
+      "(.*)Discord(.*)": "󰙯  Discord",
+      "(.*)Spotify(.*)": "󰓇  Spotify",
+      "": "  Desktop",
+    },
+    "separate-outputs": true,
+    "tooltip": false,
+  },
+
+  "mpris": {
+    "format": "{status_icon}  {title}",
+    "format-paused": "  {title}",
+    "format-stopped": "",
+    "player-icons": {
+      "default": "󰎇",
+      "spotify": "󰓇",
+      "firefox": "󰈹",
+      "chromium": "",
+      "mpv": "󰎁",
+    },
+    "status-icons": {
+      "playing": "󰐊",
+      "paused": "󰏤",
+      "stopped": "",
+    },
+    "max-length": 35,
+    "tooltip-format": "{player}\n{title}\n{artist}\n{album}",
+    "on-click": "playerctl play-pause",
+    "on-click-right": "playerctl next",
+    "on-scroll-up": "playerctl volume 0.05+",
+    "on-scroll-down": "playerctl volume 0.05-",
+    "ignored-players": ["chromium"],
+  },
+
+  "clock": {
+    "markup": true,
+    // "format": "<span weight='bold'>{:%H:%M}</span>\n<span size='small'>{:%a, %d %b}</span>",
+    "format": "{:%H:%M} {:%a, %d %b}",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "format": {
+        "months": "<span color='#cba6f7' weight='bold'>{}</span>",
+        "weekdays": "<span color='#89b4fa'>{}</span>",
+        "today": "<span color='#f38ba8' weight='bold'>{}</span>",
+      },
+    },
+    "on-click": "gnome-calendar",
+  },
+
+  "custom/notification": {
+    "tooltip": false,
+    "format": "{icon}  {text}",
+    "format-icons": {
+      "notification": "<span foreground='#f38ba8'><sup></sup></span>",
+      "none": "",
+      "dnd-notification": "<span foreground='#f38ba8'><sup></sup></span>",
+      "dnd-none": "",
+    },
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true,
+  },
+
+  "tray": { "icon-size": 16, "spacing": 8, "show-passive-items": false },
+
+  "custom/sep": { "format": "|", "tooltip": false, "interval": "once" },
+
+  "network": {
+    "format-wifi": "󰤨  {essid}",
+    "format-ethernet": "󰈀  {ifname}",
+    "format-disconnected": "󰤭",
+    "tooltip-format-wifi": "󰤨  {essid}\n  {signalStrength}%\n󰅧  ↓{bandwidthDownBytes}  ↑{bandwidthUpBytes}",
+    "tooltip-format-ethernet": "󰈀  {ifname}\n󰅧  ↓{bandwidthDownBytes}  ↑{bandwidthUpBytes}",
+    "max-length": 20,
+    "on-click": "nm-connection-editor",
+    "interval": 5,
+  },
+
+  "bluetooth": {
+    "format": "󰂯",
+    "format-connected": "󰂱  {device_alias}",
+    "format-off": "󰂲",
+    "tooltip-format": "󰂯  {status}",
+    "tooltip-format-connected": "󰂱  {device_alias}",
+    "on-click": "blueman-manager",
+  },
+
+  "pulseaudio": {
+    "format": "{icon}  {volume}%",
+    "format-muted": "󰝟  Muted",
+    "format-icons": { "headphone": "󰋋", "default": ["󰕿", "󰖀", "󰕾"] },
+    "scroll-step": 5,
+    "on-click": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "tooltip-format": "{icon}  {desc}\n  {volume}%",
+  },
+
+  "backlight": {
+    "format": "{icon}  {percent}%",
+    "format-icons": ["󰃞", "󰃟", "󰃠"],
+    "on-scroll-up": "brightnessctl set 5%+",
+    "on-scroll-down": "brightnessctl set 5%-",
+    "device": "intel_backlight",
+  },
+
+  "battery": {
+    "states": { "full": 100, "good": 80, "warning": 30, "critical": 15 },
+    "format": "{icon}  {capacity}%",
+    "format-charging": "󰂄  {capacity}%",
+    "format-plugged": "󰚥  {capacity}%",
+    "format-full": "󰁹  Full",
+    "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+    "tooltip-format": "󰁹  {capacity}%",
+    "interval": 30,
+  },
+
+  "custom/perfbtn": {
+    "format": "󰻠",
+    "tooltip": "Hide performance stats",
+    "on-click": "bash ~/.config/waybar/scripts/toggle-perf.sh",
+  },
+
+  "cpu": {
+    "format": "󰻠  {usage}%",
+    "tooltip-format": "CPU: {usage}%\nLoad: {load}",
+    "interval": 2,
+    "on-click": "ghostty -e btop",
+  },
+
+  "memory": {
+    "format": "󰍛  {percentage}%",
+    "tooltip-format": "RAM: {used:0.1f}G / {total:0.1f}G\nSwap: {swapUsed:0.1f}G",
+    "interval": 5,
+    "on-click": "ghostty -e btop",
+  },
+
+  "disk": {
+    "format": "󰋊  {percentage_used}%",
+    "tooltip-format": "  {path}\n{used} / {total}\n{free} free",
+    "interval": 30,
+    "path": "/",
+    "on-click": "ghostty -e btop",
+  },
+
+  "temperature": {
+    "format": "󰔏  {temperatureC}°C",
+    "format-critical": "󰸁  {temperatureC}°C",
+    "critical-threshold": 80,
+    "interval": 5,
+    "on-click": "ghostty -e btop",
+  },
+
+  "custom/power": {
+    "format": "⏻",
+    "tooltip": "Power menu",
+    "on-click": "wlogout",
+    "on-click-right": "systemctl suspend",
+  },
+}

@@ -1,0 +1,618 @@
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  THE DOTS — modules/waybar/style.css                         ║
+   ╠══════════════════════════════════════════════════════════════╣
+   ║  Purpose : Full visual styling for Waybar.                   ║
+   ║  Palette : Catppuccin Mocha                                  ║
+   ║  Font    : JetBrainsMono Nerd Font                           ║
+   ║  Syntax  : GTK CSS — use @define-color / @name, NOT var()    ║
+   ║  Docs    : https://github.com/Alexays/Waybar/wiki/Styling     ║
+   ╚══════════════════════════════════════════════════════════════╝
+
+   NOTE ON GTK CSS vs BROWSER CSS:
+   Waybar stylesheets are parsed by GTK, not a web browser.
+   This means:
+     ✗  CSS custom properties  (--name: value / var(--name))
+     ✓  GTK named colors       (@define-color name #hex / @name)
+     ✓  GTK alpha()            alpha(@name, 0.0–1.0)
+     ✗  Non-color variables    (--radius, --font-size, etc. are NOT supported)
+   All spacing, radius, and font values must be written as literals.
+   Reference: https://docs.gtk.org/gtk4/css-overview.html
+*/
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CATPPUCCIN MOCHA — GTK NAMED COLORS
+   Single source of truth for the entire theme.
+   Change a hex here → updates everywhere below.
+   Palette reference: https://catppuccin.com/palette
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Backgrounds */
+@define-color base      #1e1e2e; /* Main bar background */
+@define-color mantle    #181825; /* Tooltip / darker bg */
+@define-color crust     #11111b; /* Deepest shadow color */
+
+/* Surfaces (elevated UI layers) */
+@define-color surface0  #313244; /* Subtle module bg */
+@define-color surface1  #45475a; /* Border / divider */
+@define-color surface2  #585b70; /* Separator color */
+
+/* Overlays (muted text / icons) */
+@define-color overlay0  #6c7086; /* Disabled / dim */
+@define-color overlay1  #7f849c; /* Secondary icons */
+@define-color overlay2  #9399b2; /* Tertiary text */
+
+/* Text */
+@define-color text      #cdd6f4; /* Primary label text */
+@define-color subtext0  #a6adc8; /* Secondary text */
+@define-color subtext1  #bac2de; /* Slightly brighter secondary */
+
+/* Accent colors */
+@define-color lavender  #b4befe;
+@define-color blue      #89b4fa; /* Network / info */
+@define-color sapphire  #74c7ec; /* Bluetooth / memory */
+@define-color sky       #89dceb;
+@define-color teal      #94e2d5; /* Charging / temp normal */
+@define-color green     #a6e3a1; /* Good states / media */
+@define-color yellow    #f9e2af; /* Warnings / backlight */
+@define-color peach     #fab387; /* CPU high load */
+@define-color maroon    #eba0ac;
+@define-color red       #f38ba8; /* Critical / errors */
+@define-color mauve     #cba6f7; /* PRIMARY ACCENT */
+@define-color pink      #f5c2e7; /* BT audio */
+@define-color flamingo  #f2cdcd;
+@define-color rosewater #f5e0dc;
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RESET & BASE
+   GTK does not support non-color @define-color entries,
+   so radius (8px / 4px), font size, and transition
+   durations are written as literals throughout this file.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+* {
+    font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font Mono";
+    font-size: 13px;
+    font-weight: 400;
+    border: none;
+    border-radius: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    text-shadow: none;
+    -gtk-icon-shadow: none;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   THE BAR ITSELF
+   Floating pill — rounded, frosted, elevated.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+window#waybar {
+    background-color: alpha(@base, 0.85);
+    border: 1px solid alpha(@surface0, 0.6);
+    border-radius: 8px;
+    color: @text;
+    box-shadow:
+        0 4px 24px alpha(@crust, 0.6),
+        0 1px 0 alpha(@surface1, 0.3) inset;
+    transition: background-color 200ms ease;
+}
+
+window#waybar:hover {
+    background-color: alpha(@base, 0.92);
+}
+
+.modules-left,
+.modules-center,
+.modules-right {
+    padding: 0 4px;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MODULE — BASE STYLES
+   Shared foundation for all modules.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#custom-arch,
+#workspaces,
+#window,
+#mpris,
+#clock,
+#custom-notification,
+#tray,
+#network,
+#bluetooth,
+#pulseaudio,
+#backlight,
+#battery,
+#custom-perfbtn,
+#cpu,
+#memory,
+#disk,
+#temperature,
+#custom-power {
+    color: @text;
+    padding: 0 10px;
+    margin: 4px 1px;
+    border-radius: 4px;
+    transition: all 200ms ease;
+}
+
+/* Shared hover — subtle bg highlight + mauve text */
+#network:hover,
+#bluetooth:hover,
+#pulseaudio:hover,
+#backlight:hover,
+#battery:hover,
+#cpu:hover,
+#memory:hover,
+#disk:hover,
+#temperature:hover,
+#mpris:hover {
+    background-color: alpha(@surface0, 0.6);
+    color: @mauve;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LEFT — ARCH LOGO
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#custom-arch {
+    color: @blue;
+    font-size: 18px;
+    padding: 0 12px 0 10px;
+    margin-right: 4px;
+    /* Left-side pill cap — curved on the left only */
+    border-radius: 4px 0 0 4px;
+    background-color: alpha(@surface0, 0.4);
+    border-right: 1px solid alpha(@surface1, 0.4);
+    transition: all 200ms ease;
+}
+
+#custom-arch:hover {
+    color: @mauve;
+    background-color: alpha(@surface0, 0.8);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LEFT — WORKSPACES
+   α β γ δ ε — active workspace gets a solid mauve pill.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#workspaces {
+    padding: 0 6px;
+    background-color: alpha(@surface0, 0.4);
+    border-radius: 4px;
+}
+
+#workspaces button {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 15px;
+    font-weight: 500;
+    color: @overlay1;
+    padding: 0 8px;
+    margin: 3px 1px;
+    border-radius: 4px;
+    background: transparent;
+    border: none;
+    transition: all 200ms ease;
+    min-width: 28px;
+}
+
+#workspaces button:hover {
+    color: @subtext1;
+    background-color: alpha(@surface1, 0.5);
+}
+
+/* Active (focused) workspace */
+#workspaces button.active {
+    color: @base;
+    background-color: @mauve;
+    font-weight: 700;
+    min-width: 32px;
+    box-shadow: 0 0 10px alpha(@mauve, 0.4);
+}
+
+/* Occupied but not focused */
+#workspaces button.occupied {
+    color: @subtext0;
+}
+
+/* Urgent — app requesting attention */
+#workspaces button.urgent {
+    color: @base;
+    background-color: @red;
+    animation: urgent-pulse 1s ease-in-out infinite;
+}
+
+/*@keyframes urgent-pulse {
+    0%,
+    100% {
+        background-color: @red;
+    }
+    50% {
+        background-color: alpha(@red, 0.6);
+    }
+}*/
+
+/* Special / scratchpad */
+#workspaces button.special {
+    color: @yellow;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LEFT — WINDOW TITLE
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#window {
+    color: @subtext0;
+    font-weight: 400;
+    font-style: italic;
+    padding: 0 10px;
+}
+
+/* No focused window (showing desktop) */
+#window.empty {
+    color: @overlay0;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LEFT — MEDIA PLAYER (MPRIS)
+   Left border tinted per player. Pulses while playing.
+   config.jsonc sets format-stopped = "" so it collapses
+   to nothing when no media is active.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#mpris {
+    color: @green;
+    background-color: alpha(@surface0, 0.4);
+    border-radius: 4px;
+    padding: 0 12px;
+    margin-left: 4px;
+    border-left: 2px solid alpha(@green, 0.5);
+}
+
+#mpris.paused {
+    color: @overlay1;
+    border-left-color: alpha(@overlay1, 0.4);
+}
+
+#mpris.spotify {
+    color: @green;
+    border-left-color: @green;
+}
+
+#mpris.mpv {
+    color: @sapphire;
+    border-left-color: @sapphire;
+}
+
+#mpris.playing {
+    animation: media-playing 3s ease-in-out infinite;
+}
+
+/*@keyframes media-playing {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.75;
+    }
+}*/
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CENTER — CLOCK
+   Two-line layout via Pango markup in config.jsonc.
+   Bold HH:MM on line 1 / dim Day DD Mon on line 2.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#clock {
+    color: @text;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 0 14px;
+    background-color: alpha(@surface0, 0.3);
+    border-radius: 4px;
+    margin: 3px 6px;
+    /*line-height: 1.1;*/
+    transition: all 200ms ease;
+}
+
+#clock:hover {
+    background-color: alpha(@surface0, 0.6);
+    color: @mauve;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CENTER — NOTIFICATIONS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#custom-notification {
+    color: @overlay1;
+    font-size: 16px;
+    padding: 0 10px;
+    margin: 4px 2px;
+    transition: color 200ms ease;
+}
+
+/* Unread notifications — red bell with soft glow */
+#custom-notification.notification {
+    color: @red;
+    text-shadow: 0 0 8px alpha(@red, 0.6);
+}
+
+/* Do Not Disturb — muted bell */
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification {
+    color: @overlay0;
+}
+
+#custom-notification:hover {
+    color: @mauve;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RIGHT — SYSTEM TRAY
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#tray {
+    padding: 0 8px;
+    margin: 4px 2px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: alpha(@red, 0.15);
+    border-radius: 4px;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RIGHT — SEPARATOR
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#custom-sep {
+    color: alpha(@surface2, 0.8);
+    font-size: 16px;
+    padding: 0 2px;
+    margin: 0;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RIGHT — NETWORK
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#network {
+    color: @blue;
+}
+
+#network.disconnected {
+    color: @overlay0;
+}
+
+#network.ethernet {
+    color: @teal;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RIGHT — BLUETOOTH
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#bluetooth {
+    color: @sapphire;
+}
+
+#bluetooth.off,
+#bluetooth.disabled {
+    color: @overlay0;
+}
+
+#bluetooth.connected {
+    color: @blue;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RIGHT — AUDIO
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#pulseaudio {
+    color: @mauve;
+}
+
+#pulseaudio.muted {
+    color: @overlay0;
+}
+
+#pulseaudio.bluetooth {
+    color: @pink;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RIGHT — BACKLIGHT
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#backlight {
+    color: @yellow;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RIGHT — BATTERY
+   Green → Yellow → Red as charge drops.
+   Pulses red when critical. Teal when charging.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#battery {
+    color: @green;
+}
+
+#battery.good {
+    color: @green;
+}
+
+#battery.warning {
+    color: @yellow;
+}
+
+#battery.critical {
+    color: @red;
+    animation: battery-critical 1s ease-in-out infinite;
+}
+
+/*@keyframes battery-critical {
+    0%,
+    100% {
+        color: @red;
+    }
+    50% {
+        color: alpha(@red, 0.4);
+    }
+}*/
+
+#battery.charging,
+#battery.plugged {
+    color: @teal;
+}
+
+#battery.full {
+    color: @green;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RIGHT — PERFORMANCE TOGGLE BUTTON
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#custom-perfbtn {
+    color: @overlay1;
+    font-size: 15px;
+    padding: 0 8px;
+    border-radius: 4px;
+    transition: all 200ms ease;
+}
+
+#custom-perfbtn:hover {
+    color: @mauve;
+    background-color: alpha(@surface0, 0.6);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RIGHT — PERFORMANCE MODULES (cpu / mem / disk / temp)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#cpu,
+#memory,
+#disk,
+#temperature {
+    color: @overlay1;
+    padding: 0 8px;
+    font-size: 12px;
+    transition: all 200ms ease;
+}
+
+/* CPU under heavy load */
+#cpu.high {
+    color: @peach;
+}
+
+/* Memory — sapphire tint */
+#memory {
+    color: @sapphire;
+}
+
+/* Temperature — teal when cool */
+#temperature {
+    color: @teal;
+}
+
+/* Temperature — critical threshold reached */
+#temperature.critical {
+    color: @red;
+    animation: battery-critical 1s ease-in-out infinite;
+}
+
+/* Disk — lavender */
+#disk {
+    color: @lavender;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RIGHT — POWER BUTTON
+   Idle: dim overlay. Hover: red with faint red glow.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+#custom-power {
+    color: @overlay1;
+    font-size: 17px;
+    padding: 0 12px 0 10px;
+    margin-left: 2px;
+    /* Right-side pill cap */
+    border-radius: 0 4px 4px 0;
+    background-color: alpha(@surface0, 0.3);
+    border-left: 1px solid alpha(@surface1, 0.3);
+    transition: all 200ms ease;
+}
+
+#custom-power:hover {
+    color: @red;
+    background-color: alpha(@red, 0.1);
+    border-left-color: alpha(@red, 0.3);
+    box-shadow: inset 0 0 12px alpha(@red, 0.08);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TOOLTIPS
+   Dark frosted popups matching the bar depth language.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+tooltip {
+    background-color: @mantle;
+    border: 1px solid alpha(@surface1, 0.8);
+    border-radius: 8px;
+    color: @text;
+    padding: 6px 10px;
+    box-shadow: 0 8px 32px alpha(@crust, 0.8);
+}
+
+tooltip label {
+    color: @text;
+    font-size: 12px;
+    /*line-height: 1.6;*/
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CALENDAR POPUP (clock tooltip)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+calendar {
+    background-color: @mantle;
+    color: @text;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+calendar:selected {
+    background-color: @mauve;
+    color: @base;
+    border-radius: 4px;
+}
+
+calendar.highlight {
+    color: @red;
+    font-weight: bold;
+}
+
+calendar header {
+    color: @mauve;
+    font-weight: bold;
+    font-size: 13px;
+    padding-bottom: 4px;
+}
+
+calendar.button {
+    color: @blue;
+    background: transparent;
+}

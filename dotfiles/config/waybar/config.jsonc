@@ -1,0 +1,396 @@
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  THE DOTS — modules/waybar/config.jsonc                      ║
+// ╠══════════════════════════════════════════════════════════════╣
+// ║  Purpose : Waybar layout and module configuration.           ║
+// ║  Docs    : https://github.com/Alexays/Waybar/wiki            ║
+// ║  Palette : Catppuccin Mocha                                  ║
+// ╚══════════════════════════════════════════════════════════════╝
+//
+// STRUCTURE:
+//   Left   → Arch logo | Workspaces | Window title | Media player
+//   Center → Clock/Date | Notifications
+//   Right  → System tray → Essentials (wifi/bt/audio/backlight/battery)
+//             → Perf drawer (cpu/mem/disk/temp) → Power button
+//
+// NOTE: This uses JSONC (JSON with Comments). Waybar supports it natively.
+// ─────────────────────────────────────────────────────────────────
+
+{
+  // ── Bar positioning & geometry ────────────────────────────────
+  "layer": "top", // Render above windows. "bottom" = below.
+  "position": "top", // top | bottom | left | right
+  "height": 38, // Bar height in pixels.
+  "margin-top": 6, // Gap between bar and screen top edge.
+  "margin-left": 10, // Gap from left edge.
+  "margin-right": 10, // Gap from right edge.
+  "spacing": 0, // Spacing between modules (we handle it in CSS).
+
+  // ── Passthrough ───────────────────────────────────────────────
+  // When true, clicks pass through the bar to windows behind it.
+  "passthrough": false,
+
+  // ── Exclusive zone ────────────────────────────────────────────
+  // true = bar reserves screen space (windows don't overlap it).
+  "exclusive": true,
+
+  // ── Reload signal ─────────────────────────────────────────────
+  // Send SIGUSR2 to reload waybar: `pkill -SIGUSR2 waybar`
+  "reload_style_on_change": true,
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // MODULE LAYOUT
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  "modules-left": [
+    "custom/arch",
+    "hyprland/workspaces",
+    "hyprland/window",
+    "mpris",
+  ],
+
+  "modules-center": ["clock", "custom/notification"],
+
+  "modules-right": [
+    "tray",
+    "custom/sep",
+    "network",
+    "bluetooth",
+    "custom/sep",
+    "pulseaudio",
+    "backlight",
+    "battery",
+    "custom/sep",
+    "custom/perfbtn",
+    "cpu",
+    "memory",
+    "disk",
+    "temperature",
+    "custom/sep",
+    "custom/power",
+  ],
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // LEFT MODULES
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // ── Arch Logo ─────────────────────────────────────
+  // Clicking opens Rofi app launcher. Right-click opens file manager.
+  "custom/arch": {
+    "format": "", // Arch logo from Nerd Fonts (nf-linux-archlinux)
+    "tooltip": false,
+    "on-click": "rofi -show drun -show-icons",
+    "on-click-right": "ghostty -e yazi",
+  },
+
+  // ── Workspaces ────────────────────────────────────
+  // https://github.com/Alexays/Waybar/wiki/Module:-Hyprland
+  "hyprland/workspaces": {
+    "format": "{icon}",
+    "format-icons": {
+      // Greek alphabet symbols for workspaces 1–5
+      // α β γ δ ε from Unicode Greek block
+      "1": "α",
+      "2": "β",
+      "3": "γ",
+      "4": "δ",
+      "5": "ε",
+      // Fallback for workspaces 6–10 (rarely used, keep minimal)
+      "6": "6",
+      "7": "7",
+      "8": "8",
+      "9": "9",
+      "10": "10",
+      // Special workspace (scratchpad)
+      "special": "",
+    },
+    // Persistent = show workspace even when empty.
+    // We want all 5 always visible for clean layout.
+    "persistent-workspaces": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": [],
+    },
+    "on-click": "activate",
+    "on-scroll-up": "hyprctl dispatch workspace e+1",
+    "on-scroll-down": "hyprctl dispatch workspace e-1",
+    "sort-by-number": true,
+    "active-only": false,
+    "tooltip": false,
+  },
+
+  // ── Active Window Title ───────────────────────────
+  // Shows the focused window's title. Truncated to keep bar clean.
+  "hyprland/window": {
+    "format": "{title}",
+    "max-length": 40, // Truncate long titles at 40 chars
+    "rewrite": {
+      // Rewrite common window titles to shorter versions.
+      // Format: "pattern": "replacement" (regex supported)
+      "(.*) — Mozilla Firefox": "󰈹  $1",
+      "(.*) - Zen Browser": "󰈹  $1",
+      "(.*) — Chromium": "  $1",
+      "(.*)Ghostty": "  Terminal",
+      "(.*)kitty": "  Terminal",
+      "(.*)nvim(.*)": "  $2",
+      "(.*)zed(.*)": "  Zed",
+      "(.*)Discord(.*)": "󰙯  Discord",
+      "(.*)Spotify(.*)": "󰓇  Spotify",
+      "(.*)Steam(.*)": "  Steam",
+      "": "  Desktop",
+    },
+    "separate-outputs": true, // Each monitor shows its own focused window
+    "tooltip": false,
+  },
+
+  // ── Media Player (MPRIS) ──────────────────────────
+  // Supports Spotify, mpv, Firefox, any MPRIS2-compatible player.
+  // Hidden automatically when nothing is playing.
+  // https://github.com/Alexays/Waybar/wiki/Module:-MPRIS
+  "mpris": {
+    // {player_icon} = icon for the player app
+    // {status_icon} = play/pause/stop icon
+    // {title}, {artist}, {album}
+    "format": "{status_icon}  {title}",
+    "format-paused": "  {title}",
+    "format-stopped": "", // Empty = hidden when stopped
+    "player-icons": {
+      "default": "󰎇",
+      "spotify": "󰓇",
+      "firefox": "󰈹",
+      "chromium": "",
+      "mpv": "󰎁",
+    },
+    "status-icons": {
+      "playing": "󰐊",
+      "paused": "󰏤",
+      "stopped": "",
+    },
+    "max-length": 35,
+    // Show media controls in tooltip
+    "tooltip-format": "{player}\n{title}\n{artist}\n{album}",
+    "on-click": "playerctl play-pause",
+    "on-click-right": "playerctl next",
+    "on-scroll-up": "playerctl volume 0.05+",
+    "on-scroll-down": "playerctl volume 0.05-",
+    // Ignore these players (they spam MPRIS with non-music content)
+    "ignored-players": ["chromium"],
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // CENTER MODULES
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // ── Clock + Date ──────────────────────────────────
+  // Two-line display: time on top, date underneath (via CSS).
+  // Format uses Pango markup for styling within the module.
+  "clock": {
+    // Primary format — bold time, then a newline, then dimmer date
+    "markup": true,
+    "format": "{:%H:%M}",
+    // Tooltip shows a full calendar
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "mode-mon-col": 3,
+      "weeks-pos": "right",
+      "on-scroll": 1,
+      "format": {
+        "months": "<span color='#cba6f7' weight='bold'>{}</span>",
+        "weekdays": "<span color='#89b4fa'>{}</span>",
+        "weeks": "<span color='#94e2d5'>W{}</span>",
+        "today": "<span color='#f38ba8' weight='bold'>{}</span>",
+      },
+    },
+    "on-click": "gnome-calendar",
+    "on-click-right": "gsimplecal",
+  },
+
+  // ── Notifications ─────────────────────────────────
+  // Custom module that bridges into SwayNotificationCenter.
+  // Shows count badge when there are unread notifications.
+  // Script reads swaync's notification count via its socket.
+  "custom/notification": {
+    "tooltip": false,
+    "format": "{icon}  {text}",
+    "format-icons": {
+      "notification": "<span foreground='#f38ba8'><sup></sup></span>",
+      "none": "",
+      "dnd-notification": "<span foreground='#f38ba8'><sup></sup></span>",
+      "dnd-none": "",
+    },
+    // This script outputs notification count + icon status.
+    // It listens for swaync state changes via its D-Bus interface.
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true,
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // RIGHT MODULES
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // ── System Tray ───────────────────────────────────
+  // Shows tray icons from apps: nm-applet, blueman, etc.
+  "tray": {
+    "icon-size": 16,
+    "spacing": 8,
+    "show-passive-items": false, // Hide passive (dimmed) tray icons
+  },
+
+  // ── Visual Separator ─────────────────────────────
+  // A thin decorative separator between module groups.
+  // Styled as a vertical rule in CSS.
+  "custom/sep": {
+    "format": "|",
+    "tooltip": false,
+    "interval": "once",
+  },
+
+  // ── Network (WiFi / Ethernet) ─────────────────────
+  "network": {
+    "format-wifi": "󰤨  {essid}",
+    "format-ethernet": "󰈀  {ifname}",
+    "format-disconnected": "󰤭",
+    "format-disabled": "󰤮",
+    "tooltip-format-wifi": "󰤨  {essid}\n  {signalStrength}%  {frequency} MHz\n󰅧  ↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}",
+    "tooltip-format-ethernet": "󰈀  {ifname}\n󰅧  ↓ {bandwidthDownBytes}  ↑ {bandwidthUpBytes}",
+    "tooltip-format-disconnected": "Disconnected",
+    "max-length": 20,
+    "on-click": "nm-connection-editor",
+    "interval": 5,
+  },
+
+  // ── Bluetooth ─────────────────────────────────────
+  "bluetooth": {
+    "format": "󰂯",
+    "format-connected": "󰂱  {device_alias}",
+    "format-off": "󰂲",
+    "tooltip-format": "󰂯  {status}",
+    "tooltip-format-connected": "󰂱  {device_alias}\n{device_battery_percentage}% battery",
+    "tooltip-format-connected-battery": "󰂱  {device_alias}\n{device_battery_percentage}%",
+    "on-click": "blueman-manager",
+    "on-click-right": "rfkill toggle bluetooth",
+  },
+
+  // ── Audio (PulseAudio / PipeWire) ─────────────────
+  "pulseaudio": {
+    "format": "{icon}  {volume}%",
+    "format-muted": "󰝟  Muted",
+    "format-bluetooth": "{icon}  {volume}%  󰂱",
+    "format-bluetooth-muted": "󰝟  󰂱",
+    "format-icons": {
+      "headphone": "󰋋",
+      "hands-free": "󰋎",
+      "headset": "󰋎",
+      "phone": "",
+      "portable": "",
+      "car": "",
+      "default": ["󰕿", "󰖀", "󰕾"], // Volume levels: low/med/high
+    },
+    "scroll-step": 5, // Volume step on scroll (%)
+    "on-click": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "tooltip-format": "{icon}  {desc}\n  {volume}%",
+    "smooth-scrolling-threshold": 1,
+  },
+
+  // ── Backlight (screen brightness) ─────────────────
+  "backlight": {
+    "format": "{icon}  {percent}%",
+    "format-icons": ["󰃞", "󰃟", "󰃠"], // Low / mid / high brightness icons
+    "on-scroll-up": "brightnessctl set 5%+",
+    "on-scroll-down": "brightnessctl set 5%-",
+    "tooltip-format": "Brightness: {percent}%",
+    "smooth-scrolling-threshold": 1,
+    // Only show if backlight device is found (laptops only)
+    "device": "intel_backlight", // Change to your device: `ls /sys/class/backlight/`
+  },
+
+  // ── Battery ───────────────────────────────────────
+  "battery": {
+    "states": {
+      "full": 100,
+      "good": 80,
+      "warning": 30,
+      "critical": 15,
+    },
+    "format": "{icon}  {capacity}%",
+    "format-charging": "󰂄  {capacity}%",
+    "format-plugged": "󰚥  {capacity}%",
+    "format-full": "󰁹  Full",
+    "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+    "tooltip-format": "󰁹  {capacity}%\n  {timesecs} remaining\n{cycles} cycles",
+    "tooltip-format-charging": "󰂄  Charging\n{capacity}%\n  {timesecs} until full",
+    "tooltip-format-full": "󰁹  Fully charged",
+    "on-click": "gnome-power-statistics",
+    "interval": 30,
+    "bat": "BAT0", // Check your battery: `ls /sys/class/power_supply/`
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // PERFORMANCE DRAWER
+  // Modules are always present but hidden via CSS class toggling.
+  // The perfbtn toggles the `.perf-visible` class on the bar,
+  // which CSS uses to reveal/hide the perf modules.
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // ── Perf Toggle Button ────────────────────────────
+  "custom/perfbtn": {
+    "format": "󰻠", // System monitor icon (nf-md-chart_bar)
+    "tooltip": "Toggle performance stats",
+    "on-click": "bash ~/.config/waybar/scripts/toggle-perf.sh",
+  },
+
+  // ── CPU ───────────────────────────────────────────
+  "cpu": {
+    "format": "󰻠  {usage}%",
+    "tooltip-format": "CPU: {usage}%\nLoad: {load}\nPer core: {percpu_usage}",
+    "interval": 2,
+    "on-click": "ghostty -e btop",
+  },
+
+  // ── Memory ────────────────────────────────────────
+  "memory": {
+    "format": "󰍛  {percentage}%",
+    "tooltip-format": "RAM: {used:0.1f}G / {total:0.1f}G\nSwap: {swapUsed:0.1f}G / {swapTotal:0.1f}G",
+    "interval": 5,
+    "on-click": "ghostty -e btop",
+  },
+
+  // ── Disk ──────────────────────────────────────────
+  "disk": {
+    "format": "󰋊  {percentage_used}%",
+    "tooltip-format": "  {path}\n{used} / {total} used\n{free} free",
+    "interval": 30,
+    "path": "/",
+    "on-click": "ghostty -e btop",
+  },
+
+  // ── Temperature ───────────────────────────────────
+  "temperature": {
+    "format": "󰔏  {temperatureC}°C",
+    "format-critical": "󰸁  {temperatureC}°C",
+    "tooltip-format": "Temperature: {temperatureC}°C",
+    "critical-threshold": 80, // Mark as critical above 80°C
+    "interval": 5,
+    // hwmon path — find yours with: `ls /sys/class/hwmon/hwmon*/temp*_label`
+    // "hwmon-path": "/sys/class/hwmon/hwmon1/temp1_input"
+    "on-click": "ghostty -e btop",
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // POWER BUTTON
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  "custom/power": {
+    "format": "⏻",
+    "tooltip": "Power menu",
+    "on-click": "wlogout",
+    "on-click-right": "systemctl suspend",
+  },
+}
